@@ -1,0 +1,318 @@
+Angular Routing and Navigation Playbook
+
+
+
+IMPORTANT!: The project (code base) uses a diffent git branch for each course module!  
+
+
+#Bootstrapping an Angular application
+In the context of an Angular application, bootstrapping refers to the process of starting up or initializing the Angular app. 
+This involves configuring the root module, launching the main component, and setting up the initial dependency injection system.
+Bootstrapping steps:
+	1. Root module initialization
+	2. Component initialization
+	3. Dependency Injection Setup (Angular DI)
+	4. Application compilation
+	5. Rendering the application
+
+
+
+2. Course Introduction and Code Examples
+
+#Agular is a single page application
+	-The main JavaScript bundle is downloaded from the server and then the browser handles displaying the different views in the window
+	-Views can be changed without changes to the URL
+	-Routing without changing the URL breaks native browser navigation
+
+#How to make Angular respond to URL changes	
+	-Important!: By bootstrapping the Angular Router module it is possible to connect the application to the browser URL which allows
+	 users to move between views using buildin browser functionality
+	-Routing can be added to the Angular appilcation via the CLI when creating the application/project
+	 The CLI will make the necessary configurations to bootstrap the Router with the application
+	-(Angular application bootstrapped with modules VS Angular application bootstrapped with standalone component DOESN'T matter)
+
+#Angular Routing purposes:
+	-Connect applicaiton routing with browser URL/navigation/history
+	-Pass data
+	-Route guards
+	-Lazy loading
+	-Auxiliary and nesterd routes
+	-Deep links
+	-Reactive state management
+
+#Course environment
+	-Angular 16.0.1
+	-Version check:> ng version
+	
+	
+	
+3. Basic Angular Routing Setup (Bootstrapping Routing when using Modules (AppModule))
+
+#Introduction to Angular Routing
+Bootstrapping Routing with Modules Topics:
+	-Bootstrap routing in an Angular application
+	-Add a route outlet to the DOM
+	-Declare routes
+	-Enable router tracing
+	-Hook into router lifecycle events
+
+#Discussion: Angular RouterModule Exports
+	-The Angular library automatically comes with the Router module
+	-The primary entry point export for the Angular router is the 'RouterModule'
+	-Applications that don't use the 'RouterModule' will, when the application compiles, have there unused modules treeshaken (removed) from the bundle
+	 by the compiler.
+	-The 'RouterModule' can be imported to any module, can be imported many times and the first import of 'RouterModule' must be at the root of the application
+	 Typically 'RouterModule' is imported in the 'AppModule' (root module of the application)
+	-Only importing the 'RouterModule' is not enough to fully make use of it. The 'RouterModule' also needs to be bootstrapped in the application and the 'RouterModule'
+	 has a method to handle that: .forRoot()
+	 Note: Via the .forRoot() and .forCild() method the Angular router knows which view to connect to which route
+	 Important!: Only .forRoot() can instantiate the RouterService and only .forRoot() can also accept a configuration object. 
+	 Important!: .forRoot() can only be invoked once and must be invoked in the same module the application itself is bootstrapped
+	-RouterModule.forRoot():
+		a.Requires route declarations
+		b.Instantiates RouterService (Singleton)
+		c.Configures RouterModule
+		d.Invokede only one time
+	-RouterModule.forChild():
+		a.Requires route declarations
+		b.Can be invoked many times
+	-RouterOutlet tells router where to place the view in the DOM:
+		a.RouterOutlet is an Angular routing directive
+		b.RouterOutlet is a container for routed content
+		c.Place in the structure of the DOM
+
+#Demo - Bootstrap Angular RouterModule (in an existing Angular application/project)			
+
+#Declaring Routes
+	-Properties to define a simple route:
+		-path
+		-component
+		-redirectTo
+		-pathMethod
+	-Parts of a URL
+		https://iowa.bethanys.com/shop/pies?filter=plum
+		Protocol: 	https://
+		Sub-domain: iowa.
+		Donain:		bethanys.com
+		Path:		/shop/pies
+		Query:		?filter=plum
+	-Anguar Path Segments
+		/shop/pie/fruit	
+		Segment 1:	/shop 
+		Segment 2:	/pie
+		Segment 3:	/fruit
+	-The Angular Router attempts to match a rout with a given path, reading the path from left to right: /shop, /shop/pie, /shop/pie/fruit
+	-As soon as a route path satisfies the router it will consume the segment and follow the routing instructions for that match
+	 Note: If no match is found nothing will be rendered in the router-outlet
+	-Imporatant!: path declarations should not contain leading or trailing slashes. E.g. 'shop/pie' 
+	-Valid Path Declarations (string data type):
+		a.Single path segments: 'shop'
+		b.Empty string (indicating no segment should be consumed):	''
+		c.Multiple path segments: 'shop/pie'
+		d.Wildcard route path: '**'
+	-Angular Router uses a "First Match Wins Hierarchy" strategy
+	 Important!!!: This means that more specific routes should be specified belore less specific routes.
+	 Caution!: The Wildcard route '**' will match all routes and should be declared last.
+	-Angular Router path match strategies - Prefix vs. Full
+	 The default strategy is Prefix
+	 Prefix:
+		-Default strategy
+		-Matches segments from left to right
+		-In case of partial segment matches (not all segments are matched, yet), remaining segments will try to match a child route
+		-If there are unmatched segments the router will do nothing
+	 Full:
+		-All segments that have not yet been consumed must match the entire path
+		-In cae of partial segment matches, remaining segments will automatically fail to match (NO CHECKING OF CHILD ROUTES)
+	-For both path match strategies a "full path configuration match" must be found to satisfy the router.
+	 If there are any unmatch segments the router will do nothign. 
+	-Typically, most routes use the Prefix path match startegy. However there are some situation the Full path match strategy is prefered.
+	 E.g. in cause of a default route.
+	-Once the router has matched a path it needs to know what to do with the match, typically the component property will be set and will tell the router
+	 which component to render in the <router-outlet></router-outlet>. Alternatively, it is possible to set the redirectTo property which for example can
+	 be used to redirect the user to another 'default'  route (which does have the component property set of course)
+	 
+	
+#Demo - Declaring Default and Home Routes
+	Caution!: 	When using a redirect on an empty path it is required to set the path match strategy to 'full'
+				This is needed because the empty path is a prefix to any URL (Effectively Angular considers every URL to start with an empty prefix) 
+
+	export const ROUTES : Routes = [
+	  {
+		path: 'home',
+		component: HomeComponent,
+	  },
+	  {
+		path: '',
+		redirectTo: 'home',
+		pathMatch: 'full'
+	  }
+	];
+
+	@NgModule({
+	  declarations: [AppComponent],
+	  imports: [
+		BrowserModule,
+		RouterModule.forRoot(ROUTES),
+	  ],
+	  bootstrap: [AppComponent]
+	})
+	export class AppModule {}
+
+#Child Routes and Route Order
+	-.forChild()
+		a. Takes an array of routes
+		b. Reuses the existing singleton router service instance
+		c. Allows us to move route declaration closer to the code (components) they refer
+		d. The Angular CLI follows a similar pattern  
+	-The order of imports is very important when it comes to Routing modules as the import order determines the order in which the route declarions of each module
+	 are added to the Router module Routes array. This is very important because of the "First Match Wins Hierarchy" path match strategy, which dictates that more
+	 specific routes must be declared before less specific routes.
+	 Example:	
+		@NgModule({
+		  declarations: [AppComponent],
+		  imports: [
+			BrowserModule,
+			ChildRoutingModule,  // Added first
+			AppRoutingModule,	 // Added second
+		  ],
+		  bootstrap: [AppComponent]
+		})
+		export class AppModule {}
+		
+		//------------------------------------
+		
+		const routes : Routes = [
+		  {
+			path: 'home/child-one',
+			component: ChildOneComponent,
+		  },
+		  {
+			path: 'home/child-two',
+			component: ChildTwoComponent,
+		  },
+		];
+		
+		@NgModule({
+		  imports: [RouterModule.forChild(routes)],
+		  exports: [RouterModule]
+		})
+		export class ChildRoutingModule {}
+	
+		//-----------------------------------------
+	
+		const routes : Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  }
+		];
+		
+		@NgModule({
+		  imports: [RouterModule.forRoot(routes)],
+		  exports: [RouterModule]
+		})
+		export class AppRoutingModule {}
+	
+	-Important!!: An alternative to .forChild() and ChildRoutingModules is to refer to the child routes via the Routes 'children' property. This solves the problem of the non-nested structure
+	 of the ChildRoutingModules and lowers the risk of a wrong order in the routes declarations. The 'children' propery is typically use for Standalone components (as they don't use modules)
+	 but the Routes 'children' property can also be used with Module based applications. Also, implementing nested routes using the 'children' property sets up the application to be lazily loaded.
+	 Example:
+		import {childRoutes} from './child-routes'
+		
+		export const ROUTES : Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+			children: childRoutes,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  }
+		];
+
+		@NgModule({
+		  declarations: [AppComponent],
+		  imports: [
+			BrowserModule,
+			RouterModule.forRoot(ROUTES),
+		  ],
+		  bootstrap: [AppComponent]
+		})
+		export class AppModule {}
+		
+		//------------------------------------ /child-routes.ts ----------------------
+		
+		export const childRoutes : Routes = [
+		  {
+			path: 'child-one',
+			component: ChildOneComponent,
+		  },
+		  {
+			path: 'child-two',
+			component: ChildTwoComponent,
+		  },
+		];
+		
+	-Caution!!: In case of nesting the routes declarations via the 'children' property, the paths of the child routes are declared relatively to the parent route!
+	-Note: The nested routes using the Routes 'children' property allows for easy refactors in case the underlying parent route changes.
+	
+# Demo - Declaring a Wildcard Route and Tracing
+	-The Wildcard route is the last chance the Router has to make a match and will tell the router what to do if no paths were matched. Use cases: user enters an URL incorrectly or the user uses an expired link
+	 Example:
+		export const ROUTES: Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  },
+		  {
+			path: '**',
+			component: NotFoundComponent,
+		  },
+		];
+	-Impartatn!!: The Wildcard route must be the very last route!
+	-Important!!: To enable tracing on the Router module add an options object as argument to the .forRoot() method call, example: RouterModule.forRoot(ROUTES, {enableTracing: true})
+		When tracing is enabled all internal navigation events are logged to the console
+		
+# Demo - Hooking into Router Events
+	-Purposes for hooking into route events:
+		-Animations between views
+		-Logging user flows
+		-Run custom logic
+	-Subscribing to the Router.events observable. Example:
+		@Component({
+		  selector: 'app-root',
+		  templateUrl: './app.component.html',
+		  styleUrls: ['./app.component.css']
+		})
+		export class AppComponent implements OnInit {
+		  constructor(private readonly _router: Router) { }
+		  ngOnInit(): void {
+			this._router.events.subscribe(event => {
+			  if (event instanceof NavigationStart) console.log('Navigation Start');
+			})
+		  }
+		}
+	-The 'RouterOutlet' can be used to log router events. It emits 4 different events: activate, deactivate, attach, detach.
+	
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
