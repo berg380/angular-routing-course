@@ -11,9 +11,9 @@
             [matMenuTriggerFor]="menu">Shop
             <span>&#8964;</span>
             <mat-menu class="menu-dropdown" #menu="matMenu">
-              <button mat-menu-item [routerLink]="ROUTER_TOKENS.SHOP"
+              <button mat-menu-item [routerLink]="'shop'"
                 (click)="changeCategory(Category.SEASONAL_PIE)">Seasonal Pies</button>
-              <button mat-menu-item [routerLink]="ROUTER_TOKENS.SHOP" (click)="changeCategory(Category.FRUIT_PIE)">Fruit
+              <button mat-menu-item [routerLink]="['shop']" (click)="changeCategory(Category.FRUIT_PIE)">Fruit
                 Pies</button>
               <button mat-menu-item [routerLink]="ROUTER_TOKENS.SHOP"
                 (click)="changeCategory(Category.CHEESECAKE)">Cheesecakes</button>
