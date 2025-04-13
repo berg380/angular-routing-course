@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
 import { DetailViewComponent } from './detail-view/detail-view.component';
 import { SideMenuComponent } from './side-menu/side-menu.component';
+import { PieService } from '../services/pie.service';
 
 @Component({
   standalone: true,
@@ -13,4 +14,10 @@ import { SideMenuComponent } from './side-menu/side-menu.component';
   styleUrls: ['./products-view.component.css']
 })
 export class ProductsViewComponent {
+  @Input() set categoryId(value: string){
+    console.log('categoryId', value);
+    this.pieService.setSelectedCategory(value);
+  }
+
+  private readonly pieService = inject(PieService);
 }
