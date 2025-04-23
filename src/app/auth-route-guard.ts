@@ -11,7 +11,7 @@ export function authRouteGuard(route: string){
 
     return authService.userAuth.pipe(
       map((permissions) =>
-        !!permissions?.includes(route) || router.parseUrl(`/${ROUTER_TOKENS.NOT_AUTH}`
+        !!permissions?.includes(route) || router.parseUrl(`/${ROUTER_TOKENS.NOT_AUTH}` //Router.praseUrl() returns a UrlTree object.
       )));
   }
 }
