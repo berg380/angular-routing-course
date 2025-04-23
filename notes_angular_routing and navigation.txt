@@ -1,0 +1,1409 @@
+Angular Routing and Navigation Playbook
+
+
+
+IMPORTANT!: The project (code base) uses a diffent git branch for each course module!  
+
+
+#Bootstrapping an Angular application
+In the context of an Angular application, bootstrapping refers to the process of starting up or initializing the Angular app. 
+This involves configuring the root module, launching the main component, and setting up the initial dependency injection system.
+Bootstrapping steps:
+	1. Root module initialization
+	2. Component initialization
+	3. Dependency Injection Setup (Angular DI)
+	4. Application compilation
+	5. Rendering the application
+
+
+
+2. Course Introduction and Code Examples
+
+#Agular is a single page application
+	-The main JavaScript bundle is downloaded from the server and then the browser handles displaying the different views in the window
+	-Views can be changed without changes to the URL
+	-Routing without changing the URL breaks native browser navigation
+
+#How to make Angular respond to URL changes	
+	-Important!: By bootstrapping the Angular Router module it is possible to connect the application to the browser URL which allows
+	 users to move between views using build-in browser functionality
+	-Routing can be added to the Angular application via the CLI when creating the application/project
+	 The CLI will make the necessary configurations to bootstrap the Router with the application
+	-(Angular application bootstrapped with modules VS Angular application bootstrapped with standalone component DOESN'T matter)
+
+#Angular Routing purposes:
+	-Connect application routing with browser URL/navigation/history
+	-Pass data
+	-Route guards
+	-Lazy loading
+	-Auxiliary and nested routes
+	-Deep links
+	-Reactive state management
+
+#Course environment
+	-Angular 16.0.1
+	-Version check:> ng version
+	
+	
+	
+3. Basic Angular Routing Setup (Bootstrapping Routing when using Modules (AppModule))
+
+#Introduction to Angular Routing
+Bootstrapping Routing with Modules Topics:
+	-Bootstrap routing in an Angular application
+	-Add a route outlet to the DOM
+	-Declare routes
+	-Enable router tracing
+	-Hook into router lifecycle events
+
+#Discussion: Angular RouterModule Exports
+	-The Angular library automatically comes with the Router module
+	-The primary entry point export for the Angular router is the 'RouterModule'
+	-Applications that don't use the 'RouterModule' will, when the application compiles, have there unused modules treeshaken (removed) from the bundle
+	 by the compiler.
+	-The 'RouterModule' can be imported to any module, can be imported many times and the first import of 'RouterModule' must be at the root of the application
+	 Typically 'RouterModule' is imported in the 'AppModule' (root module of the application)
+	-Only importing the 'RouterModule' is not enough to fully make use of it. The 'RouterModule' also needs to be bootstrapped in the application and the 'RouterModule'
+	 has a method to handle that: .forRoot()
+	 Note: Via the .forRoot() and .forCild() method the Angular router knows which view to connect to which route
+	 Important!: Only .forRoot() can instantiate the RouterService and only .forRoot() can also accept a configuration object. 
+	 Important!: .forRoot() can only be invoked once and must be invoked in the same module the application itself is bootstrapped
+	-RouterModule.forRoot():
+		a.Requires route declarations
+		b.Instantiates RouterService (Singleton)
+		c.Configures RouterModule
+		d.Invokede only one time (in the Module where the AppComponent is bootstrapped, typically AppModule)
+	-RouterModule.forChild():
+		a.Requires route declarations
+		b.Can be invoked many times
+		c.Used in child modules (child modules allow for lazy loading!?)
+	-RouterOutlet tells router where to place the view in the DOM:
+		a.RouterOutlet is an Angular routing directive
+		b.RouterOutlet is a container for routed content
+		c.Placed in the structure of the DOM
+
+#Demo - Bootstrap Angular RouterModule (in an existing Angular application/project)			
+	-Bootstrapping of module-base applicatoin, example:
+	/* main.ts */		
+	platformBrowserDynamic().bootstrapModule(AppModule).catch(err => console.error(err));
+	
+	/* app.module.ts */ 
+	export const ROUTES : Routes = [];
+
+	@NgModule({
+	  declarations: [AppComponent],
+	  imports: [
+		BrowserModule,
+		RouterModule.forRoot(ROUTES, { enableTracing: true }),
+	  ],
+	  bootstrap: [AppComponent]
+	})
+	export class AppModule {}
+
+
+#Declaring Routes
+	-Properties to define a simple route:
+		-path
+		-component
+		-redirectTo
+		-pathMethod
+	-Parts of a URL
+		https://iowa.bethanys.com/shop/pies?filter=plum
+		Protocol: 	https://
+		Sub-domain: iowa.
+		Donain:		bethanys.com
+		Path:		/shop/pies
+		Query:		?filter=plum
+	-Anguar Path Segments
+		/shop/pie/fruit	
+		Segment 1:	/shop 
+		Segment 2:	/pie
+		Segment 3:	/fruit
+	-The Angular Router attempts to match a rout with a given path, reading the path from left to right: /shop, /shop/pie, /shop/pie/fruit
+	-As soon as a route path satisfies the router it will consume the segment and follow the routing instructions for that match
+	 Note: If no match is found nothing will be rendered in the router-outlet
+	-Imporatant!: path declarations should not contain leading or trailing slashes. E.g. 'shop/pie' 
+	-Valid Path Declarations (string data type):
+		a.Single path segments: 'shop'
+		b.Empty string (indicating no segment should be consumed):	''
+		c.Multiple path segments: 'shop/pie'
+		d.Wildcard route path: '**'
+	-Angular Router uses a "First Match Wins Hierarchy" strategy
+	 Important!!!: This means that more specific routes should be specified before less specific routes.
+	 Caution!: The Wildcard route '**' will match all routes and should be declared last.
+	-Angular Router path match strategies - Prefix vs. Full
+	 The default strategy is Prefix
+	 Prefix:
+		-Default strategy
+		-Matches segments from left to right
+		-In case of partial segment matches (not all segments are matched, yet), remaining segments will try to match a child route
+		-If there are unmatched segments the router will do nothing
+	 Full:
+		-All segments that have not yet been consumed must match the entire path
+		-In case of partial segment matches, remaining segments will automatically fail to match (NO CHECKING OF CHILD ROUTES)
+	-For both path match strategies a "complete path configuration match" must be found to satisfy the router.
+	 If there are any unmatch segments the router will do nothing. 
+	-Typically, most routes use the Prefix path match startegy. However there are some situation the Full path match strategy is prefered.
+	 E.g. in cause of a default route.
+	-Once the router has matched a path it needs to know what to do with the match, typically the component property will be set and will tell the router
+	 which component to render in the <router-outlet></router-outlet>. Alternatively, it is possible to set the redirectTo property which for example can
+	 be used to redirect the user to another 'default'  route (which does have the component property set of course)
+	 
+	
+#Demo - Declaring Default and Home Routes
+	Caution!: 	When using a redirect on an empty path it is required to set the path match strategy to 'full'
+				This is needed because the empty path is a prefix to any URL (Effectively Angular considers every URL to start with an empty prefix) 
+
+	export const ROUTES : Routes = [
+	  {
+		path: 'home',
+		component: HomeComponent,
+	  },
+	  {
+		path: '',
+		redirectTo: 'home',
+		pathMatch: 'full'
+	  }
+	];
+
+	@NgModule({
+	  declarations: [AppComponent],
+	  imports: [
+		BrowserModule,
+		RouterModule.forRoot(ROUTES),
+	  ],
+	  bootstrap: [AppComponent]
+	})
+	export class AppModule {}
+
+#Child Routes and Route Order
+	-.forChild()
+		a. Takes an array of routes
+		b. Reuses the existing singleton router service instance
+		c. Allows us to move route declaration closer to the code (components) they refer
+		d. The Angular CLI follows a similar pattern  
+	-The order of imports is very important when it comes to Routing modules as the import order determines the order in which the route declarions of each module
+	 are added to the Router module Routes array. This is very important because of the "First Match Wins Hierarchy" path match strategy, which dictates that more
+	 specific routes must be declared before less specific routes.
+	 Example:	
+		@NgModule({
+		  declarations: [AppComponent],
+		  imports: [
+			BrowserModule,
+			ChildRoutingModule,  // Added first
+			AppRoutingModule,	 // Added second
+		  ],
+		  bootstrap: [AppComponent]
+		})
+		export class AppModule {}
+		
+		//------------------------------------
+		
+		const routes : Routes = [
+		  {
+			path: 'home/child-one',
+			component: ChildOneComponent,
+		  },
+		  {
+			path: 'home/child-two',
+			component: ChildTwoComponent,
+		  },
+		];
+		
+		@NgModule({
+		  imports: [RouterModule.forChild(routes)],
+		  exports: [RouterModule]
+		})
+		export class ChildRoutingModule {}
+	
+		//-----------------------------------------
+	
+		const routes : Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  }
+		];
+		
+		@NgModule({
+		  imports: [RouterModule.forRoot(routes)],
+		  exports: [RouterModule]
+		})
+		export class AppRoutingModule {}
+	
+	-Important!!: An alternative to .forChild() and ChildRoutingModules is to refer to the child routes via the Routes 'children' property. This solves the problem of the non-nested structure
+	 of the ChildRoutingModules and lowers the risk of a wrong order in the routes declarations. The 'children' propery is typically use for Standalone components (as they don't use modules)
+	 but the Routes 'children' property can also be used with Module based applications. Also, implementing nested routes using the 'children' property sets up the application to be lazily loaded.
+	 Example:
+		import {childRoutes} from './child-routes'
+		
+		export const ROUTES : Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+			children: childRoutes,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  }
+		];
+
+		@NgModule({
+		  declarations: [AppComponent],
+		  imports: [
+			BrowserModule,
+			RouterModule.forRoot(ROUTES),
+		  ],
+		  bootstrap: [AppComponent]
+		})
+		export class AppModule {}
+		
+		//------------------------------------ /child-routes.ts ----------------------
+		
+		export const childRoutes : Routes = [
+		  {
+			path: 'child-one',
+			component: ChildOneComponent,
+		  },
+		  {
+			path: 'child-two',
+			component: ChildTwoComponent,
+		  },
+		];
+		
+	-Caution!!: In case of nesting the routes declarations via the 'children' property, the paths of the child routes are declared relatively to the parent route!
+	-Note: The nested routes using the Routes 'children' property allows for easy refactors in case the underlying parent route changes.
+	
+# Demo - Declaring a Wildcard Route and Tracing
+	-The Wildcard route is the last chance the Router has to make a match and will tell the router what to do if no paths were matched. Use cases: user enters an URL incorrectly or the user uses an expired link
+	 Example:
+		export const ROUTES: Routes = [
+		  {
+			path: 'home',
+			component: HomeComponent,
+		  },
+		  {
+			path: '',
+			redirectTo: 'home',
+			pathMatch: 'full'
+		  },
+		  {
+			path: '**',
+			component: NotFoundComponent,
+		  },
+		];
+	-Important!!: The Wildcard route must be the very last route!
+	-Important!!: To enable tracing on the Router module add an options object as argument to the .forRoot() method call, example: RouterModule.forRoot(ROUTES, {enableTracing: true})
+		When tracing is enabled all internal navigation events are logged to the console
+		
+# Demo - Hooking into Router Events
+	-Purposes for hooking into route events:
+		-Animations between views
+		-Logging user flows
+		-Run custom logic
+	-Subscribing to the Router.events observable. Example:
+		@Component({
+		  selector: 'app-root',
+		  templateUrl: './app.component.html',
+		  styleUrls: ['./app.component.css']
+		})
+		export class AppComponent implements OnInit {
+		  constructor(private readonly _router: Router) { }
+		  ngOnInit(): void {
+			this._router.events.subscribe(event => {
+			  if (event instanceof NavigationStart) console.log('Navigation Start');
+			})
+		  }
+		}
+	-The 'RouterOutlet' can also be used to log router events. It emits 4 different events: activate, deactivate, attach, detach.
+
+
+
+4. Routing in Standalone Componenent Applicaitons
+# Standalone components:
+	-Standalone components are components that do not require declaration in an agular module
+	-In the early days of Angular the "Angular" Module existed to allow the compiler to do an ahead-of-time compilation
+	-With regard to routing. Standalone components allows us to directly lazy load route declarations or components, where previously
+	 it was required to lazy load rout and components through a module. 
+	 
+# Bootstrapping the Router with standalone components:
+	-Standalone application are bootstrapped in the main.ts file (Not in a module)
+	-Instead of using the 'bootstrapModule()' function, standalone components use the 'bootstrapApplication()' function (Used in the main.ts file)
+	 The first parameter is required and is always the root component of the application typically named 'AppComponent'
+	 Note: Since the Router service is a global singleton service that needs to be instantiated when the application is bootstrapped, a way is needed 
+	 to let the compiler know that our application should initialize Angular routing.
+	 The 'bootstrapApplication()' function also takes an optional second parameter which is an application configuration object.
+	 The application configuration object has the property 'provider' where a dependency on the Angular Router can be provided
+	 using the 'provideRouter()' function
+	-The 'provideRouter()' function requires an array of routes and can accept optional configuration functions
+	 
+# The main difference between Module-based applications and Standalone applications whit regard to routing are:
+	-Bootstrapping the Router
+	-Configuring the Router
+	-Lazy loading routes
+
+
+# Differences in bootstrapping the Router 	
+	-Module-base applicatoin, example:
+		/* main.ts */		
+		platformBrowserDynamic().bootstrapModule(AppModule).catch(err => console.error(err));
+		
+		/* app.module.ts */ 
+		export const ROUTES : Routes = [];
+
+		@NgModule({
+		  declarations: [AppComponent],
+		  imports: [
+			BrowserModule,
+			RouterModule.forRoot(ROUTES, { enableTracing: true }),
+		  ],
+		  bootstrap: [AppComponent]
+		})
+		export class AppModule {}
+		
+	-Applicatoin with standalone components, example: 
+	
+		/* main.ts */
+		bootstrapApplication(AppComponent, appConfig).catch(err => console.error(err));
+
+		/* app.config.ts */
+		export const ROUTES : Routes = [];
+		
+		export const appConfig: ApplicationConfig = {
+			providers: [
+				provideAnimations(),
+				provideRouter(ROUTES, withDebugTracing()),
+			]
+		}
+	
+	
+5. User Navigation between Views
+	-Using the 'RouterLink' directive in templates
+	-Adding active style using 'RouterLinkActive'
+	-Navigating from class files using RouterService
+	
+# Introduction to RouterLink
+	-Handle events close to where they happen (preferably via a directive on the element that emits the event)
+	-The 'RouterLink' directive is part of the RouterModule
+	-In case of Standalone components the 'RouterLink' has to be imported into the component via the component metadata
+	-'RouterLink' can accept a string literal but typically we pass it a link parameters array
+	 Link Parameters Array:
+		-Holds the path of the router to the router component
+		-Can accept path segments(parameters)
+		-Can accept optional parameters
+	 Path Segments:
+		-Can be static strings (string literal) or dynamic values
+		-Are seperated by commas or concatenated with forward slashes, examples:
+		 ??? [routerLink]="'shop/candy'"
+		 ??? [routerLink]="['shop', 'candy']"
+	-Path Segment Prefixing (Is used to tell the Router how to navigation relative to (in context of) the current active route):
+		-Prefix with forward-slash (/)	 		Absolute path: Adds path segments starting at the base url.
+		-Prefix with dot forward-slash (./)		Relative path: Adds path segments relative to the current active route.
+		-No prefix								Relative path: Adds path segments relative to the current active route.
+		-Prefix with dot dot foward-slash (../)	Relative path: Goes up one level relative to the current active route.
+	-Important!: Use relative path whenever possible to avoid large refactors if the parent url structure changes
+	-Important!: It is best practice to use 'Constant route tokens' instaed of using identical string literals across the applciation.
+ 
+	Demo:
+	
+# Styling the Active Element with RouterLinkAcitve
+	-Provides a clear visual indication of which link is active (important for good user experience and good accessibility)
+	-The 'RouterLinkActive' directive can be applied to any element that has/contains a 'RouterLink' directive
+	-The 'RouterLinkActive' directive adds a class to the element when the activated route matches the router link
+	-Can apply a single class string, multiple class strings seperated by spaces or an array of class strings if the 'RouterLinkActive'
+	 directive is wrapped in square brackets
+	-It is also possible to apply the 'RouterLinkActive' directive to the parent element if the child element contains a 'RouterLink' directive
+	-For screan reader users (people with impaired eyesight) the 'ariaCurrentWhenActive' property to 'page', this tells screen reader users 
+	 that the link they are on is the active link
+	Demo / Example:
+	/* app.routes.ts */
+		export enum ROUTER_TOKENS { HOME = 'home', SHOP = 'shop', CONTACT = 'contact', ABOUT = 'about', NOT_FOUND = '**' }
+	
+	/* header.component.html */
+		<ul>
+		  <li>
+		  <button routerLinkActive="active-link" ariaCurrentWhenActive="page" class="menu-item" mat-button
+			[matMenuTriggerFor]="menu">Shop
+			<span>&#8964;</span>
+			<mat-menu class="menu-dropdown" #menu="matMenu">
+			  <button mat-menu-item [routerLink]="'shop'" (click)="changeCategory(Category.SEASONAL_PIE)">Seasonal Pies</button>
+			  <button mat-menu-item [routerLink]="['shop']" (click)="changeCategory(Category.FRUIT_PIE)">Fruities</button>
+			  <button mat-menu-item [routerLink]="['./']" (click)="changeCategory(Category.CHEESECAKE)">Cheesecakes</button>
+			  <button mat-menu-item [routerLink]="ROUTER_TOKENS.SHOP" (click)="changeCategory(Category.ALL)">AllPies</button>
+			</mat-menu>
+		  </button>
+		  </li>
+		  <li><button [routerLink]="ROUTER_TOKENS.CONTACT" routerLinkActive="active-link" ariaCurrentWhenActive="page" class="menu-item" mat-button>Contact</button></li>
+		  <li><button [routerLink]="ROUTER_TOKENS.ABOUT" routerLinkActive="active-link" ariaCurrentWhenActive="page" class="menu-item" mat-button>About</button></li>
+		</ul>
+	
+	
+# Navigating Programmatically
+	-'RouterService' navigation methods:
+		navigate()
+		navigateByUrl()
+	-'navigate()'
+		a.Routes to absolute or relative paths
+		b.Requires an array of path segments
+		c.Accepts an optional 'NavigationExtras' object
+			-Set query params and manage query params handling strategies
+			-Set relative url
+			-!!Pass simple state object between routes (Could be useful for state machine like implementation)
+			-Manage browser history (alter or replace browser history)
+	-'navigateByUrl'
+		a.Routes only to absolute paths
+		b.Requires a string url or url tree
+		c.Accepts a optional 'NavigationBehaviorOptions' object
+			-It is not able to pas parameters or setting a relative path
+			-!!Pass simple state object between routes (Could be useful for state machine like implementation)
+			-Manage browser history (alter or replace browser history)
+	
+	Demo / Example:
+	  readonly router = inject(Router);
+	  readonly activatedRoute = inject(ActivatedRoute);
+	  readonly pieService = inject(PieService);
+
+	  selectPie(pie: Pie) {
+		this.pieService.setSelectedPie(this.pie.id);
+		this.router.navigate([`../${ROUTER_TOKENS.SHOP}`], { relativeTo: this.activatedRoute });
+	  }
+
+
+6. Driving State with Router Params
+	-Angular Router can be used as an build-in state management tool. By passing parameters as part of the URL we are able to capture the state
+	 of the website the user is currently on.
+	 Using the browser URL to pass user selections is on way we can easily share state between components and even to other users in different sessions.
+	 
+	-Topics:
+		-Three types of route parameters that can be passed using the Angular Router.
+		-How and when to use all three types of route parameters.
+		-How to consume and share those parameters in components and services.
+		-Create a state flow that can be used to drive the user selection state of the application]
+		-
+
+# Understanding Required Parameters - Router Path Parameters
+	-Three tyes of Angular Router parameters:
+		a. Required path parameters
+		b. Query parameters
+		c. Optional matrix parameters
+	
+	a. Path parameters (required when used):
+		-Route parameters are meant for small amounts of data like numbers, strings or booleans.
+		-Are dynamic path segments
+		-Are declared in the path property of the route
+		-Prefixed with a colon (:)
+		-Because the value of a path parameters is dynamic any value for that dynamic path segment will always match
+		-If there are static values in that same path position (route?) that need to route to a different location, those static value must be listed
+		 before the dynamic path, because the router will treat a dynamic path segment as a wildcard segment (i.e. a dynamic path segments must always
+		 be preceded by as static path segment)
+		-The dynamic path paramters (segments) are given a name, so they can be accessed from classes by name.
+		-The dynamic path parameter names must be unique within the URL
+		-Because these dynamic path parameters are literally part of the path, they are only available on the activate route. Which meant that only the
+		 activated component and its children will have access to the value of these dynamic path parameters.
+		-Structuring URL path:
+			-Similar to API endpoint structure
+			-Paths represent a hierarchy of information
+			-Paths get more specific from left to right
+			
+	b. Query parameters (optional):
+		-Are appended to the end of the path
+		-Separated from the path by a question mark (?)
+		-Separated from each other by ampersands (&)
+		-Are globally available to any class
+		-Query parameter handling strategies:
+			-"" 		Replace existing parameters with new parameters (Default behavior)
+			-"merge" 	Merge new parameters with existing parameters
+			-"preserve" Preserve current parameters during navigation
+			-
+		-The query parameters and handling strategy are passed to Router.navigate() method via the 'extras' parameter (type 'NavigationExtras')
+		 or are passed via the 'queryParams' @Input property of the RouterLink directive.
+		 
+	c. Matrix URL parameters (optional):
+		-Are appended to the end of the navigated path segment
+		-Are separated from the path by a semicolon
+		-Are separated from each other by a semicolon
+		-Can be added to one ore more segments in the route/path (Called matrix URL notation)
+		-Are only available on the activated route. Thus they are only available to be consumed inside components that are activated by the current route.
+		 They are not retained when the user navigates away from the route
+		-Typical use cases, view specific data, like pagination
+		-Are not declared on the route/path but are passed via linked parameters array, by passin an object with the name of the parameter (path segement name)
+		 as the key and the value of the parameter as the value.
+		 
+	Demo / Example - Router Path Parameters:
+		
+	a. Path parameter
+	/* app.routes.ts */	
+		export const ROUTES: Routes = [
+		  {
+			path: `${ROUTER_TOKENS.HOME}/:categoryId`,
+			component: HomeComponent,
+		  },
+		];
+		
+	/* header.component.html */	
+		<button [routerLink]="[ROUTER_TOKENS.SHOP, Category.SEASONAL_PIE]" mat-menu-item>Seasonal Pies</button>
+		
+# A Clear Flow of State (Bind Router path parameters and resolver data to @Input(s) !!)
+	-One of the most important principals of global state management is to maintain a single source of truth for information.
+	-Using the Angular Router (global service) as a global store (of state)
+	-Angular 'Router' service:
+		-Can drive stat changes
+		-A component/service can consume a path parameter from the route and then set it in a global state store such as a service or the store of a state management
+		 library like NgRX Store.
+		-Example state flow: User => RouterLink (with path parameter) => Component A => State Store 
+		-Important: State should flow through the application in a clear and predictable way
+		-Important: Even if the component that initializes route with the RouterLink is a consumer of the selected category (state) it should still fetch the category (state) 
+		 from the central state store,
+	-Consuming path parameters:
+		-As of Angular version 16+, it is possible to configure the Router to bind all path parameters and resolver data to the component input properties.
+		 If we use a setter method on the input property, it is possible to invoke the method that sets the selected category in a stateful service / store
+		-Prior to Anuglar verion 16, it was needed to import the ActivatedRoute ans subscribe the 'paramsMap' observable to be able to access path parameters
+		
+	-Configure Angular Router to bind path parameters to component @Inputs - Module based application
+		/* app-routing.module.ts */	
+			export const ROUTES : Routes = [];
+			@NgModule({
+			  declarations: [AppComponent],
+			  imports: [
+				BrowserModule,
+				RouterModule.forRoot(ROUTES, { bindToComponentInputs: true }),
+			  ],
+			  bootstrap: [AppComponent]
+			})
+			export class AppModule {}
+			
+	-Configure Angular Router to bind path parameters to component @Inputs - Standalone component application	
+		* app-routing.module.ts */
+			export const ROUTES : Routes = [];		
+			export const appConfig: ApplicationConfig = {
+			  providers: [
+				provideAnimations(),
+				provideRouter(
+				  ROUTES,
+				  withComponentInputBinding()
+				),
+			  ]
+			};
+
+		
+	Demo / Example - updating the global state via Router path parameter bound to component @Input:	
+		/* products-view.component.ts */	
+			export class ProductsViewComponent {
+			  @Input() set categoryId(value: string){
+				this.pieService.setSelectedCategory(value);
+			  }
+
+			  private readonly pieService = inject(PieService);
+			}
+			
+# Understanding Optional Parameters - Router Query parameters & Matrix URL parameters (Bind Router Matrix URL parameters to @Input(s)!!)
+	-Two types of optional routerparameters:
+		a. Query parameters
+		b. Matrix URL parameters
+	-Matrix URL parameters:
+		-Have always been supported by the Angular Router
+		-Only available on the activated route
+		-Part of the URL path segment
+		-Cannot be retained when the route changes
+		-Are technically path segments (part of path segment)
+	-Adding (and Accessing) Matrix parameters, example:
+		/* .html */
+		<button [routerLink]="['/routePath', {showModal: true}]">Show Modal</button>
+		/* URL */
+		http://my-app.com/routePath;showModal=true;
+		/* .ts */
+		@Input() showModal = false;
+	-Query parameters:
+		-Separate from the path. Appended to the end of the path separated by a question mark (?). Follwing are separated by (&)
+		-Added from any class (component or service) using the router service or routerLink directive
+		-Consumed from any class (compent or service) using the ActivatedRoute. Class doesn't need to be part of the activated route. 
+		-Can set handling strategy (repalce "", "merge", "preserve")
+		-Since query parameters are globally available they are already a single source of thruth for their values (state). So there is no 
+		 need to store them in a local Store via a @Input() set method.
+	-Adding (and Accessing) Query Parameters via RouterLink, example:
+		/* .html */
+		<button routerLink="['detail']" [queryParams]="{ showModal: true }" queryParamsHandling="merge">Show Modal</button>		
+		/* URL */
+		http://my-app.com/detail?showModal=true;
+		/* .ts */
+		@Input() showModal = false;	
+	-Adding (and Accessing) Query Parameters via Router.navigate() method, exmaple
+		/* .ts */
+		 this.router.navigate(['detail'], {
+		  queryParams: {showModal: true},
+		});
+		/* URL */
+		http://my-app.com/detail?showModal=true;
+		/* .ts */
+		@Input() showModal = false;	
+	-ActivatedRoute
+		-Gathers information about the route associated with the component loaded in the router outlet
+		-Repersents a router tree
+		-Static properties are a snapshot form when the route is first activated
+		-Also contains observable properties which emit new values as route information changes
+		-QueryParamMap:
+			a. Observable of type ParamMap
+			b. Has build in get method to retrieve parameter values by key
+			c. Can retrieve multiple values (as array) for the same key using getAll (in case the parameter contains multiple values)
+		-QueryParams
+			a. Observable of type Params. (Params is an object of key value pairs.)
+	-Demo:		
+			
+7. Creating Nested Router Outlets and Auxiliary Routes
+	-Angular allows multiple router-outlets
+	-Anuglar provides different strategies for adding additional router-outlets:
+		a. Adding router-outlets relative to the main path (route) that are children of the main router-outlet
+		b. Adding router-outlets outside of the main path (route). This is called an Auxiliary route or Named route
+	
+# Nested Router Outlets
+	-Typical situation in case of single router-outlet. The navigation bar in app-header is always rendered while changing content is displayed
+	 inside the single router-outlet, example:
+		/* .html */
+		<app-header></app-header>
+		<router-outlet/>
+	-In case some of the content rendered in the maine router outlet share some commen component like a sub menu (or sidebar navigation) of sorts, 
+	 then a 'nested router outlet' is prefered, exmaple:
+	 	/* .html */
+		<app-header></app-header>
+		<router-outlet/>
+	-Nested router outlet requirements and specifics:
+		a. The routes (paths) declared to work with the nested router outlet must be children of a route (path) that is part of the main route (path)
+		b. To declare children on a route, the 'children' property on the route object is to be used. This 'children' property accepts an array of routes
+		c. Childeren of a route are also routes themselfs and thus can have there own child routes
+		d. Each nested router outlet is contained inside of its parent router-outlet
+		e. Delcartion of child routes and nested router outlets is the same for module based and standalone component based applications
+	-Resolving routes with nested router outlets
+		-Angular uses a similar approach as with dependency injection
+		-From a leaf (most specific path segment) it starts looking up the tree for the first (nested) router-outlet to render the routed component in.
+		 a. If the component on the parent route (path segment above current child segement) has an router-let the Router will add the routed component there.
+		 b. If the component on a parent route doesn't have a router-outlet the Router will keep looking up the tree to find one.
+
+# Auxiliary ROUTES
+	-Remarks:
+		-Provide routeable secondary route views 
+		-Router outlet outside of the main router-outlet
+		-The use of auxiliary router-outlets (next to the main router-outlets) needs to be carefuly designed
+		-The use of auxiliary router-outtles must be carefuly considered and not be used to cover-up problems in the main router(-outlet)
+		-Auxiliary routes are appended to the end of the URL path segments of the main route before the query paramters		
+	-Auxiliary routes are often referred to as named outlets in the Angular documentation, as they have an optional property 'name'
+	-Implementing Auxiliary Routes:
+		a. Add a router-outlet (to a template) with the 'name' input property set
+		b. Declare a route with the 'outlet' property set to the name of the router-outlet
+		c. Activate the route with a routerLinkof the Router.navigate() method
+	-Add (open) auxiliary route to the URL:
+		[routerLink]="['/',  {outlets: {outletName: 'myAuxiliaryOutlet'}}]"
+		OR
+		this.router.navigate([{outlets: {outletName: 'myAuxiliaryOutlet'}}]);
+	-Remove (close) auxiliary route from the URL: 
+		[routerLink]="['/', {outlets: {outletName: null}}]"
+		OR
+		this.router.navigate([{outlets: {cart: null}}]);
+	-Auxiliary Routes IMPORTANT notes:
+		-Important!!: When navigating using RouterLink, it is important to remember that routing is done relative to the auxiliary route
+					  So, in order to clear the router-outlet from the URL, it is also required to pass a single forward slash (/) as the first path segment, 
+					  as to route absolutely. When attempting to clear the route from the RouterLink without a forward slash (/) before the outlets object,
+					  the navigation event is skipped because the route that is being activated is reading the current relative route which already includes
+					  axiliary route path. So the router never updates the path to remove the outlet from the URL.
+					 
+					  In other words: When using RouterLinks, pass a single forward slash before the outlets segment to prevent navigation from being skipped!
+					  Caution!!: The absolte routing seems only to be required when removing the auxiliary route from the URL!!
+								 However, in case multiple axiliary routes are active, and the intention is to de-activate only one specific axiliary route,
+								 then all the other axiliary routes that need to remain active, need to be add to the outlets object.
+					  Caution!!: When opening a second auxiliary route it is possible to use relative routing. However it might make sense to also
+							     use absolute routing in this case and provide the activation state for all existing auxiliary routes as is done when 
+								 needing to de-active one ore more routes. See reasoning above.
+					 
+		-Important!!: The reason we do not need to pass a forward slash (/) to the Router.navigate() method, is that the navigate() method applies the changes
+					  to the current route unless we intentionally set the relativeTo property in the NavigationExtras object.
+					  
+					  In other words: The Router.navigate method don't need a forward slash (/) because it uses the absolute URL by default.
+		
+		-Important!!: It is important to note that if your application is using query parameters, it is important to set the queryParamsHandling property to 'merge' 
+					  (or better to 'preserve').
+					  Otherwise, when the auxiliary route is activated, it will follow the default strategy of replacing the existing query parameters with the new
+					  ones, which are none.
+					  
+					  In ohter words: Set queryParamsHandling to 'merge' (or better to 'preserve') or the query parameters will be removed on navigation
+					  
+	-Demo / Exmample - Auxiliary route:
+		/* URL */
+			http://localhost:4200/shop/Cheesecakes/detail(cart:checkout)?productId=4
+			http://localhost:4200/contact(cart:checkout)
+			
+		/* app.routes.ts */
+			...
+			export const ROUTES: Routes = [
+			  ...,
+			  {
+				path: 'checkout',
+				outlet: 'cart',
+				component: CartComponent
+			  },
+			  ...,		
+			];
+			
+		/* app.component.html */ 
+			<app-header></app-header>
+			<router-outlet/>
+			<router-outlet [name]="cart"/>
+			
+		/* heasder.component.html */ (Note: the '/' as the first path segment used to enforce absolute routing)
+			<button mat-menu-item [routerLink]="['/', {outlets: {cart: 'checkout'}]" queryParamsHandling="preserve">
+			
+		/* cart.component.html */
+			close() {
+			  this.router.navigate([{ outlets: { cart: null } }], { queryParamsHandling: 'preserve' });
+			}
+		
+
+8. Improving Performance with Lazy Loading
+	-Not using lazy loading will lead to larg initial bundle size when the application grows.
+	-Adding feature -> larger initial bundle -> long initial load time -> high bounce rates -> missed profit
+	-Topics:
+		-Lazy loading for modules
+		-Lazy loading for standalone components
+		-Lazy loading route declarations
+		-Preloading strategies
+	-The application can be bundled / split by:
+		a. Modules
+		b. Components
+		c. Routes
+	-Project code organisation:
+		-Separate code into separated directories
+		-Use a monerepo tool like Nx to separate code into libraries
+		-Makes it easier for teams to see code boundaries	
+	-The Agular Router understands code boundaries through the imports array of the lazy loaded component or module
+	-When the application is compiled, lazyloaded code is split of into separate javascript files
+	-On initial page load the main javascript bundle is eagerly downloaded
+	-Lazy loaded bundles are downloaded on the first visit ot the route
+	-How to code lazy loaded routes:
+		a. Declare it in the route declaration
+		b. For modules or route arrays, use 'loadChildren'
+		c. For standalone components use 'loadComponent'
+		
+# Demo / Example - Lazy Loading a Module Based Route:
+	/* app.routes.ts*/
+		...
+		export const ROUTES: Routes = [
+		  ...,
+		  {
+			path: ROUTER_TOKENS.ABOUT,
+			loadChildren: () =>
+			  import('./about/about.module').then((m) => m.AboutModule),
+		  },
+		  ...,
+		];
+	
+	/* about.module.ts */
+		const ABOUT_ROUTES: Routes = [
+		  {
+			path: '',
+			component: AboutComponent,
+		  }
+		]
+
+		@NgModule({
+		  imports: [RouterModule.forChild(ABOUT_ROUTES)],
+		  declarations: [AboutComponent],
+		  exports: [AboutComponent]
+		})
+		export class AboutModule { }
+	
+# Lazy Loading a Standalone Component Route:
+	-Demo / Example 1 - Route to component WITHOUT child route 
+		/* app.routes.ts*/
+			...
+			export const ROUTES: Routes = [
+			  ...,
+			  {
+				path: ROUTER_TOKENS.CONTACT,
+				loadComponent: () =>
+				  import('./contact/contact.component').then((m) => m.ContactComponent),
+			  },
+			  ...,
+			];
+		
+		Note: No need to specify which component to load in the module as there is no module
+		
+ 	-Demo / Example 2 - Route to component WITH child routes 
+		/* app.routes.ts*/
+			...
+			export const ROUTES: Routes = [
+			  ...,
+			  {
+				path: `${ROUTER_TOKENS.SHOP}/:categoryId` ,
+				loadChildren: () =>
+				  import('./products-view/products.routes').then((m) => m.PRODUCT_ROUTES),
+			  },
+			  ...,
+			];
+		
+		/* product.routes.ts */
+			export enum PRODUCT_ROUTER_TOKENS {
+			  DETAIL = 'detail',
+			  CUSTOMIZE = 'customize',
+			}
+
+			export const PRODUCT_ROUTES: Routes = [
+			  {
+				path: '',
+				component: ProductsViewComponent,
+				children: [
+				  {
+					path: PRODUCT_ROUTER_TOKENS.DETAIL,
+					component: DetailViewComponent
+				  },
+				  {
+					path: PRODUCT_ROUTER_TOKENS.CUSTOMIZE,
+					component: CustomizeViewComponent
+				  }
+				]
+			  },
+			];
+			
+		Note: Don't forget to render the 'ProductsViewComponent' on the root path
+		
+# Setting an Application Preloading Strategy
+	-Preloading lazy loaded route bundles improves user experience and reduces wait times
+	-Typical this done when bundle sizes grow or when the user has a slow connection
+	-Preloading Strategy:
+		-Downloads the main bundle first
+		-Then lazy loaaded bundles are requested in the background
+		-When users navigate to a lazy laoded route, the code is already downloaded
+		-Set during router configuration
+	- Configure Module Based Preloading, example: 
+		/* app.module.ts */ 
+			export const ROUTES : Routes = [];
+
+			@NgModule({
+			  declarations: [AppComponent],
+			  imports: [
+				BrowserModule,
+				RouterModule.forRoot(ROUTES, { preloadingStrategy: PreloadAllModules }),
+			  ],
+			  bootstrap: [AppComponent]
+			})
+			export class AppModule {}
+	
+	- Configure Standalone Component Based Preloading, example: 
+		/* app.config.ts */ 
+			export const appConfig: ApplicationConfig = {
+			  providers: [
+				provideAnimations(),
+				provideRouter(
+				  ROUTES,
+				  withPreloading(PreloadAllModules),
+				),
+			  ]
+			};
+			
+9. Control User Navigation with Route Guards & Resolvers
+	-Use cases:
+		a. Restrict access to certain parts of the application by means of authorisations
+		b. Feature flags to restrict access to new functionality that is not ready for production
+		c. Workflow dictates that the user is restricted until it has completed all tasks related to the workflow
+	-Angular provide 4 different route guards and a resolver function to preload data required for a route
+	-Topics:
+		-4 types of Angular Route Guards
+		-When and how to use route guards
+		-When and how to use a resolver
+		-Converting a class based route guard to a functional route guard
+
+# Angular Functional Route Guards
+	-The four angular route guards:
+		a. CanActivate
+		b. CanActivateChild
+		c. CanDeactivate
+		d. CanMatch
+	-To implement a route guard, the property for the guard must be set on the route object (of the routes array)
+	-The value of each property is an array. Being able to pass an array of route guard functions allows chaining of route guards.
+	 Chaining route gaurds means we can do multiple checks before routing
+	-Route guards behavior when the guard function returns 'true':
+		a. CanActivate		=>	navigation continues
+		b. CanActivateChild	=>	navigation continues
+		c. CanDeactivate	=>	navigation continues
+		d. CanMatch			=>	navigation continues
+	-Route guards behavior when the guard function returns 'false':
+		a. CanActivate		=>	navigation is cancelled
+		b. CanActivateChild	=>	navigation is cancelled
+		c. CanDeactivate	=>	navigation is cancelled
+		d. CanMatch			=>	navigation is skipped and the route continues checking remaining routes for a ("Full"???) match (see 'Declaring routes' section 3)
+		Imporatant!: The canMatch route guard is very usefull for feature flagged routes
+					 When canMatch returns true the route to the new component is activated.
+					 When canMatch returns false the route to the new component is skipped and the route to the old component is activated.
+	-Route guards which can also return a UrlTree. When a UrlTree is returned, navigation is cancelled and a new navigation is started to the returned UrlTree:
+		a. CanActivate		=>	navigation is cancelled, and new route is initiated
+		b. CanActivateChild	=>	navigation is cancelled, and new route is initiated
+		c. CanDeactivate	=>	navigation is cancelled, and new route is initiated
+	    Note: Usefull in cases where the URL must have specific query parameters attacht to it or when the user needs certain authorisations.
+			  Due to the ability to route to another URL it is possible to present the user with a 'You are not authorised' page, for example.  
+	-Route gaurds specif behaviors and purposses:
+		a. CanActivate		=	Controls navigation to a route 
+		b. CanActivateChild	=	Controls navigation to the child routes of a route (Still allows routing to the parent route)
+		c. CanDeactivate	=	Controls navigation away from a route
+	
+	
+	-Note: Use Mackoon application to mock web-API endpoint locally (mockoon.com)
+	
+# Demo / Example 1 - CanMatch
+	/* app.routes.ts */
+		...
+		export const ROUTES: Routes = [
+		  ...,
+		  {
+			path: ROUTER_TOKENS.HOME,
+			component: HomeUpdatedComponent,
+			canMatch: [() => {
+			  const featureService = inject(FeatureFlagService);
+			  return featureService.featureFlags.pipe(map(flags => !!flags.home))
+			}]
+		  },
+		  {
+			path: ROUTER_TOKENS.HOME,
+			component: HomeComponent,
+		  },
+		  ...,
+		];
+	
+	Important!: The route to the old component (same URL) should be located after the route object for the new component (which uses the 'canMatch' route guard)
+	Note: The route quard function return type = MaybeAsync<GuardResult>, where:
+			type MaybeAsync<T> = T | Observable<T> | Promise<T>
+			type GuardResult = boolean | UrlTree | RedirectCommand
+			
+		  Note: In other words the guard function can be synchronous or asynchronous!
+		  
+# Demo / Example 2a - CanActivate
+	/* app.routes.ts */
+		...
+		export const ROUTES: Routes = [
+		  {
+			path: ROUTER_TOKENS.CHECKOUT,
+			outlet: ROUTER_TOKENS.CART,
+			loadComponent: () => import('./cart/cart.component').then(m => m.CartComponent),
+			canActivate: [authRouteGuard(ROUTER_TOKENS.CART)]
+		  },
+		  {
+			path: ROUTER_TOKENS.NOT_AUTH,
+			component: NotAuthorizedComponent,
+		  },
+		  ...,
+		];
+
+	/* cart-auth-route-guard.ts */
+		export function authRouteGuard(route: string) {
+		  return () => {
+			const authService = inject(AuthService);
+			const router = inject(Router);
+
+			return authService.userAuth.pipe(
+			  map((permissions) => !!permissions?.includes(route) || router.parseUrl(`/${ROUTER_TOKENS.NOT_AUTH}`)))
+		  }
+		}
+	
+		Note: Because the route guard function is using the inject() method, all guard logic and inject() method calls must be wrapped in an arrow function.
+			  This is needed to invoke the inject() method insided the context of the Router, to be able to get the singleton services that were registered in the 
+			  Angular injector when the application initialized.
+			  
+		Note: The old class based route guard was hardcoded for the route of the CartComponent but the new guard function should be usable with other routes as well.
+			  Therefore, an 'route' parameter is added to the guard function
+		
+		Note: Old class based route guard:
+		/* cart-auth-route-guard.ts */
+			@Injectable({ providedIn: 'root' })
+			export class CartAuthGuard implements CanActivate {
+			  private authService = inject(AuthService);
+			  private router = inject(Router);
+
+			  canActivate() {
+				return this.authService.userAuth.pipe(
+				  map((permissions) => !!permissions?.includes('cart') || this.router.parseUrl(`/${ROUTER_TOKENS.NOT_AUTH}`)))
+			  }
+			}
+				
+# Demo / Example 2b - CanActivate (Chaining route guards)
+	/* app.routes.ts */
+		...
+		export const ROUTES: Routes = [
+		  ...,
+		  {
+			path: ROUTER_TOKENS.CONTACT,
+			loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent),
+			canActivate: [() => {
+			  const featureService = inject(FeatureFlagService);
+			  const router = inject(Router);
+			  return featureService.featureFlags.pipe(map(flags => !!flags.contact || router.parseUrl(`/${ROUTER_TOKENS.NOT_READY}`)))
+			},
+			authRouteGuard(ROUTER_TOKENS.CONTACT)]
+		  },
+		  {
+			path: ROUTER_TOKENS.NOT_READY,
+			component: NotReadyComponent,
+		  },
+		  ...,
+		];
+		
+# Angular Resolvers
+	-Fetches data before a route ca be activated
+	-Blocks navigation unti the function returns
+	-Not a great solution for prefetching data from slow endpoints (new page will not get rendered until the data is retrieved)
+	
+	-Important notes:
+		-In case the resolver function throws an error or the http request return a errorResponse the resolver function will not return and the navigation
+		 will never continue. The prevent this from happening the resolver function should always catch any error and return an empty value.
+		-The data return by the resolver function can be bound to an @Input of the component using the alais/key used to declare the resolver function
+		 in the 'resolve' object of the route object 
+		-Mostlikely it is better to NOT use the Agular resolver and just use reactive tool like RxJS or @ngrx/router-store
+	
+	-Example
+		/* app.routes.ts */
+			...
+			export const ROUTES: Routes = [
+			  ...,
+			  {
+				...,
+				resolve: {
+				  userHello: () => {
+					const helloService = inject(HelloService);
+					return helloService.getUserHello();
+				  }
+				}
+			  },
+			  ...,
+			];	
+		
+		* contact.component.ts */
+			export class ContactComponent implements OnDestroy, OnInit{
+			  @Input() userHello = '';
+			  ...
+			}
+
+10. Unit Testing Angular Router
+	-Developoment dependencies used in unit-testing:
+		0. Jest testing framework
+			jest@^29.6.0
+			jest-preset-angular@^13.1.1
+		1. Angular testing library (Build on top of the TestBed. It has a convinient method for grabbing template references)
+		    @testing-library/angular": "^14.1.1
+			@testing-library/user-event": "^14.4.3
+		2. Jest-auto-spies (Library for mocking services which fit nicely into the angular framework. Especially suitable for services with observable properties.
+						    The jest-auto-spies method createSpyFromClass() is verry convinient in combination with MockProvide of ng-mocks, example: 
+								return MockBuilder(MyComponent).replace(AuthService, MockProvider(AuthService, createSpyFromClass(AuthService)));
+			jest-auto-spies@^3.0.0
+		3. Observer-spy (Makes getting test values out of observables very straightforward. So no more marble testing required)
+			@hirez_io/observer-spy@^2.2.0
+	-VScode extensions: Jest Runner
+	-End-To-End testing is typically more suitable for testing navigation
+	-When testing navigation with Unit testing, it should focus on testing if navigation was configured correctly and not if the Router is working is it should.
+	-When setting up Unit testing, don't import the actual routes and child routes arrays as they contain reference to components we don't want to provide/mock in test.
+	-Below unit test exampels use the SIFERS pattern (using the setup() method), instead of the beforeEach() method
+		Link to info on SIFERS pattern: https://medium.com/@kolodny/testing-with-sifers-c9d6bb5b362
+		Differences:
+			-Test setups stay is passed into the setup function and the class under test is returned from the setup function, to prevent tests from sharing test variables
+			 which can cause bleedthrough between tests.
+		Benefits:
+			1. Enxapsularion & Clarity
+			2. Reusability & Variablity
+			3. Better Test Focus
+			4. Faster Test Writing
+			5. Test Independence
+			6. Cleaner Test Suites (due to benefit 2)
+	-Refer 'Write better tests without Router mocks or stubs' article to learn unit testing Router service: http://blog.angular.io/write-better-tests-without-router-mocks-stubs-bf5fc95c1c57		
+	-What to Unit test:
+		-Funcional route guards
+		-Router.navigate()
+		-RouterLink directive (Important!: Use the RouterTestingHarness which provides a wrapper component with a router-outlet)
+										   To be able to use the RouterTestingHarness the following is needs to be configured:
+												1. The TestBed need to be configured with all the necessary providers to render the component under test
+												2. A Router instance that contains all the routes that will be tested
+							  (Importatn!: Use provideLocationsMocks to test if the RouterLink is acitivating the correct route / location)
+							  
+# What are the Boundaries between Unit and End-To-End testing
+	-
+	
+# Demo / Example 1 - Unit Testing Functional Route Guards
+	import { TestBed } from '@angular/core/testing';
+	import { authRouteGuard } from './auth-route-guard';
+	import { AuthService } from './services/auth.service';
+	import { Router, UrlTree } from '@angular/router';
+	import { createSpyFromClass } from 'jest-auto-spies';
+	import { subscribeSpyTo } from '@hirez_io/observer-spy'
+	import { ROUTER_TOKENS } from './app-route.constants';
+
+	describe('authRouteGuard', () => {
+	  const setup = (
+		path: string = '',
+		permissions: string[] = []
+	  ) => {
+		const mockAuthService = createSpyFromClass(AuthService, {
+		  observablePropsToSpyOn: ['userAuth']
+		});
+		mockAuthService.userAuth.nextWith(permissions);
+
+		// mock router and spy on parseUrl to return url tree
+		const mockRouter = createSpyFromClass(Router, {
+		  methodsToSpyOn: ['parseUrl']
+		});
+		const urlTree = new UrlTree();
+		mockRouter.parseUrl.mockReturnValue(urlTree);
+
+		TestBed.configureTestingModule({
+		  providers: [
+			{ provide: AuthService, useValue: mockAuthService },
+			{ provide: Router, useValue: mockRouter },
+		  ]
+		});
+
+		// instantiate route guard in test bed injection context
+		const guard = TestBed.runInInjectionContext(authRouteGuard(path));
+
+		return {
+		  guard,
+		  urlTree,
+		  mockRouter
+		};
+	  }
+	  it('returns true when permission exists', () => {
+		const path = 'cart';
+		const permissions = [path, 'other permission'];
+
+		// setup
+		const { guard } = setup(path, permissions);
+
+		// subscribe to guard (whe are not directly subscribing to the observable to prevent the risk of the test passing
+		// because we forgot to pass 'done' as argument to the it() method and calling done() in the subscribe method)
+		const guardSpy = subscribeSpyTo(guard)
+
+		// expect guard to return true
+		expect(guardSpy.getLastValue()).toBe(true);
+	  });
+
+	  it('returns UrlTree when permission does not exist', () => {
+		const path = 'cart';
+		const permissions = ['other permission']; // no permission for 'cart'
+
+		// setup
+		const { guard, urlTree, mockRouter } = setup(path, permissions);
+
+		// subscribe to guard (whe are not directly subscribing to the observable to prevent the risk of the test passing
+		// because we forgot to pass 'done' as argument to the it() method and calling done() in the subscribe method)
+		const guardSpy = subscribeSpyTo(guard)
+
+		// expect guard to return true
+		expect(guardSpy.getLastValue()).toEqual(urlTree);
+		expect(mockRouter.parseUrl).toHaveBeenCalledWith(`/${ROUTER_TOKENS.NOT_AUTH}`);
+	  });
+	})
+
+	
+# Demo / Example 2 - Unit Testing Router.navigate()	
+	import { CartComponent } from './cart.component';
+	import { CommonModule, CurrencyPipe } from '@angular/common';
+	import { FormsModule } from '@angular/forms';
+	import { MatButtonModule } from '@angular/material/button';
+	import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+	import { createSpyFromClass, provideAutoSpy } from 'jest-auto-spies';
+	import { Router } from '@angular/router';
+	import { CartService } from '../services/cart.service';
+	import { fireEvent, render, screen } from '@testing-library/angular';
+	import { ROUTER_TOKENS } from '../app-route.constants';
+	import { signal } from '@angular/core';
+
+	describe('CartComponent', () => {
+	  const setup = async () => {
+		const mockCartService = {
+		  cartItemsPlusQuantity: signal([]),
+		  subtotal: signal(1),
+		  salesTax: signal(1),
+		  total: signal(1),
+		};
+
+		// mock router service and spy on navigate
+		const mockRouter = createSpyFromClass(Router, {
+		  methodsToSpyOn: ['navigate']
+		});
+
+		const options = {
+		  imports: [
+			CommonModule,
+			CurrencyPipe,
+			MatButtonModule,
+			FormsModule,
+			MatProgressSpinnerModule,
+		  ],
+		  providers: [
+			provideAutoSpy(CartService),  //provideAutoSpy is used instead of createSpyFromClass because it cannot create spies for signals
+			{
+			  provide: CartService,
+			  useValue: mockCartService,
+			},
+			{
+			  provide: Router,
+			  useValue: mockRouter,
+			},
+		  ]
+		};
+
+		const { fixture } = await render(CartComponent, options); // replaces the TestBed.configureTestingModule()
+
+		return {
+		  fixture,
+		  mockRouter
+		};
+	  }
+
+	  it('calls router.navigate on close', async () => {
+		// setup test
+		const { fixture, mockRouter } = await setup();
+
+		// find and click close button
+		const closeButton = screen.getByText('close');
+		fireEvent.click(closeButton);
+
+		// expect router.navigate to have been called
+		expect(mockRouter.navigate).toHaveBeenCalledTimes(1);
+		expect(mockRouter.navigate).toHaveBeenCalledWith([{ outlets: { [ROUTER_TOKENS.CART]: null } }], {
+		  queryParamsHandling: 'merge'
+		});
+	  });
+	});
+	
+# Demo / Example 3 - Unit Testing RouterLink with RouterTestingHarness	
+	import { Component } from '@angular/core';
+	import { Location } from '@angular/common';
+	import { provideRouter } from '@angular/router';
+	import { RouterTestingHarness } from '@angular/router/testing';
+	import { provideLocationMocks } from '@angular/common/testing';
+	import { fireEvent, screen } from '@testing-library/angular';
+	import { createSpyFromClass } from 'jest-auto-spies';
+	import { TestBed } from '@angular/core/testing';
+	import { PieService } from '../../services/pie.service';
+	import { PRODUCT_ROUTER_TOKENS } from '../../products-view/product-routes.constant';
+	import { Pie } from '../../models/pie';
+	import { SideMenuComponent } from './side-menu.component';
+	import { createPie } from '../../models/mock-pie-factory';
+
+	@Component({
+	  template: 'Dummy'
+	})
+	export class DummyComponent { }
+
+	describe('SideMenuComponent', () => {
+	  const setup = async (pies: Pie[]) => {
+		const mockPieService = createSpyFromClass(PieService, {
+		  observablePropsToSpyOn: ['filteredPies$']
+		});
+		mockPieService.filteredPies$.nextWith(pies);
+
+		TestBed.configureTestingModule({
+		  providers: [
+			{
+			  provide: PieService,
+			  useValue: mockPieService
+			},
+			provideLocationMocks(), //??
+			provideRouter([ //This is the new way to provide the REAL Router (RouterTestingHarness) in Angular 16+
+			  { path: PRODUCT_ROUTER_TOKENS.CUSTOMIZE, component: DummyComponent },
+			  { path: PRODUCT_ROUTER_TOKENS.DETAIL, component: DummyComponent },
+			  { path: '**', component: SideMenuComponent },
+			])
+		  ]
+		});
+
+		// implement RouterTestingHardness
+		const harness = await RouterTestingHarness.create();
+		const activatedComponent = await harness.navigateByUrl('/', SideMenuComponent)
+
+		// get location reference
+		const location = TestBed.inject(Location);
+
+		return {
+		  harness, 
+		  activatedComponent, 
+		  location,
+		};
+	  }
+
+	  it('navigates to the detail view when customize is false', async () => {
+		const pieId1 = 'pieId1';
+		const pie1 = createPie({ id: pieId1 });
+
+		// setup
+		const { location } = await setup([pie1]);
+
+		// get button and click it
+		const pieButton = screen.getByTestId(`detail-view-${pieId1}`);	
+		fireEvent.click(pieButton);
+
+		// expect location to change
+		expect(location.path()).toEqual(`/detail?productId=${pieId1}`);
+	  });
+
+	  it('navigates to the detail view when customize is true', async () => {
+		const pieId1 = 'pieId1';
+		const pie1 = createPie({ id: pieId1 });
+
+		// setup
+		const { location, activatedComponent, harness } = await setup([pie1]);
+		activatedComponent.customize = true; // set customize to true
+		harness.detectChanges(); // trigger change detection
+
+		// get button and click it
+		const pieButton = screen.getByTestId(`customize-view-${pieId1}`);	
+		fireEvent.click(pieButton);
+
+		// expect location to change
+		expect(location.path()).toEqual(`/customize?productId=${pieId1}`);
+	  });
+
+	});
+	
+	
+	
+	
+11. General testing notes:
+
+# Testing asynchronous code in Angular with Jest
+	1. Use done():
+		it('should emit a value', (done) => {
+		  const observable$ = of('value').pipe(delay(100));
+
+		  observable$.subscribe(value => {
+			expect(value).toBe('value');
+			done(); // Tells Jest to wait
+		  });
+		});
+	2. Return a Promise:
+		it('should emit a value', async () => {
+		  const observable$ = of('value').pipe(delay(100));
+		  const result = await firstValueFrom(observable$);
+		  expect(result).toBe('value');
+		});
+	3. Use done.fail() for error handling:
+		it('should emit a value', (done) => {
+		  observable$.subscribe({
+			next: value => {
+			  expect(value).toBe('value');
+			  done();
+			},
+			error: err => done.fail(err),
+		  });
+		});
+	4. Use subscribeSpyTo() form package @hirez_io/observer-spy:
+		import { of, delay } from 'rxjs';
+		import { subscribeSpyTo } from '@hirez_io/observer-spy';
+
+		it('should emit a value', async () => {
+		  const observable$ = of('value').pipe(delay(100));
+
+		  const spy = await subscribeSpyTo(observable$);
+
+		  expect(spy.getValues()).toEqual(['value']);
+		  expect(spy.receivedComplete()).toBe(true);
+		});
