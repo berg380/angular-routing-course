@@ -698,9 +698,9 @@ Bootstrapping Routing with Modules Topics:
 		b. Declare a route with the 'outlet' property set to the name of the router-outlet
 		c. Activate the route with a routerLinkof the Router.navigate() method
 	-Add (open) auxiliary route to the URL:
-		[routerLink]="['/',  {outlets: {outletName: 'myAuxiliaryOutlet'}}]"
+		[routerLink]="['/',  {outlets: {outletName: 'pathName'}}]"
 		OR
-		this.router.navigate([{outlets: {outletName: 'myAuxiliaryOutlet'}}]);
+		this.router.navigate([{outlets: {outletName: 'pathName'}}]);
 	-Remove (close) auxiliary route from the URL: 
 		[routerLink]="['/', {outlets: {outletName: null}}]"
 		OR
